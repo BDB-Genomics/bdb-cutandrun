@@ -1,0 +1,7 @@
+name: seacr_env
+channel:
+ - bioconda
+ - conda-forge
+ - defaults
+dependencies:
+ - seacr = 1.3 

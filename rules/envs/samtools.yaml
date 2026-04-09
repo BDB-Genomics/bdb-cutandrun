@@ -1,0 +1,15 @@
+
+name: samtools_env
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - samtools
+  - libdeflate  
+#Supports
+ #samtools_view
+ #samtools_sort 
+ #samtools_markdup
+ #samtools_stats
+  

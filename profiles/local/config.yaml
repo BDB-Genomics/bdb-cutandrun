@@ -1,0 +1,19 @@
+# Snakemake Local Profile
+# Usage: snakemake --profile profiles/local
+
+use-conda: true
+conda-frontend: mamba
+jobs: 8
+printshellcmds: true
+reason: true
+show-failed-logs: true
+keep-going: true
+rerun-incomplete: true
+restart-times: 0
+
+# These are fallbacks ONLY. If a rule has its own resources (like yours do),
+# these values will be ignored for that rule.
+default-resources:
+  - mem_mb=4000
+  - time="01:00:00"
+  - threads=1

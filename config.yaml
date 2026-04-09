@@ -1,0 +1,363 @@
+# =============================================================================
+# CUT&RUN Pipeline Configuration (Base Scaffold)
+# =============================================================================
+
+global:
+    samples: "data/samples.tsv"
+    bowtie_index: "data/reference/bowtie2/genome"
+    genome_fa: "data/reference/genome.fa"
+    genome_chrom_sizes: "data/reference/genome.chrom.sizes"
+    blacklist: "data/reference/ENCODE_blacklist.bed"
+    annotation_gtf: "data/reference/annotation.gtf"
+    ecoli_index: "data/reference/ecoli/bowtie2/ecoli"  # Path to E. coli bowtie2 index prefix
+
+# ----------------------- Preprocessing -----------------------
+fastp:
+  output:
+    dir: "results/fastp"
+  params:
+    trim_front1: 5
+    trim_front2: 5
+    length_required: 30
+  threads: 4
+  resources: 
+    mem_mb: 8000
+    time: "02:00:00"
+
+fastqc:
+  input:
+    R1: "results/fastp"
+    R2: "results/fastp"
+  output: "results/fastqc"
+  threads: 4
+  resources: 
+    mem_mb: 2000
+    time: "00:30:00"
+
+# ------------------------ Alignment & Utility -----------------------
+bowtie2:
+  input:
+    R1: "results/fastp"
+    R2: "results/fastp"
+  output: "results/bowtie2"
+  params:
+    extra: "--local --very-sensitive-local --no-mixed --no-discordant --phred33 -I 10 -X 700"
+  threads: 8  
+  resources: 
+    mem_mb: 8000
+    time: "04:00:00"
+
+samtools_sort:
+  input: 
+    unsorted_bam: "results/bowtie2"
+  output: 
+    sorted_bam: "results/samtools_sort"
+  threads: 4
+  resources: 
+    mem_mb: 8000
+    time: "02:00:00"
+
+calculate_mito_reads:
+  input:
+    sorted_bam: "results/samtools_sort"
+  output:
+    mito_stats: "results/mito_stats"
+  params:
+    mito_chr: "chrM"
+  threads: 2
+  resources: 
+    mem_mb: 2000
+    time: "00:30:00"
+
+remove_mito_reads:
+  input:
+    sorted_bam: "results/samtools_sort"
+  output:
+    noMT_sorted_bam: "results/remove_mito_reads"
+  params:
+    mito_chr: "chrM"
+  threads: 2
+  resources: 
+    mem_mb: 4000
+    time: "01:00:00"
+
+samtools_markdup:
+  input:
+    sorted_bam_noMT_fixmate: "results/samtools_fixmate"
+  output:
+    markdup_bam: "results/samtools_markdup"
+  params:
+    remove_duplicates: "r"
+  threads: 4
+  resources: 
+    mem_mb: 8000
+    time: "02:00:00"
+
+samtools_view:
+  input:
+    markdup_bam: "results/samtools_markdup"
+  output:
+    filtered_bam: "results/samtools_view"
+  params:
+    MAPQ: 30
+    flags: 1804
+  threads: 4
+  resources: 
+    mem_mb: 8000
+    time: "02:00:00"
+samtools_fixmate:
+  input: 
+    sorted_bam_noMT: "results/remove_mito_reads"
+  output: 
+    sorted_bam_noMT_fixmate: "results/samtools_fixmate"
+  threads: 4
+  resources: 
+    mem_mb: 8000
+    time: "02:00:00"
+
+samtools_index_post_markdup:
+  input:
+    markdup_bam: "results/samtools_markdup"
+  output:
+    index: "results/samtools_index_post_markdup"
+  threads: 2
+  resources: 
+    mem_mb: 2000
+    time: "00:30:00"
+
+samtools_index_post_filter:
+  input:
+    filtered_bam: "results/samtools_view"
+  output:
+    filtered_bam_indexed: "results/samtools_index_post_filter"
+  threads: 2
+  resources: 
+    mem_mb: 2000
+    time: "00:30:00"
+
+samtools_stats:
+  input:
+    filtered_bam: "results/samtools_view"
+  output: 
+    stats: "results/samtools_stats"
+  threads: 2
+  resources: 
+    mem_mb: 2000
+    time: "00:30:00"
+
+picard_collect_alignment_summary_metrics:
+  input:
+    markdup_bam: "results/samtools_markdup"
+  output:
+    alignment_metrics: "results/picard/CollectAlignmentSummaryMetrics"
+  params:
+    reference_genome: "data/reference/genome.fa"
+    validation_stringency: "SILENT"
+  threads: 2
+  resources: 
+    mem_mb: 8000
+    time: "01:00:00"
+
+picard_collect_insert_size_metrics:
+  input:
+    markdup_bam: "results/samtools_markdup"
+  output:
+    metrics: "results/picard/CollectInsertSizeMetrics"
+    histogram: "results/picard/CollectInsertSizeMetrics"
+  params:
+    M: 0.5
+    validation_stringency: "SILENT"
+  threads: 2
+  resources: 
+    mem_mb: 8000
+    time: "01:00:00"
+
+# ------------------------ Coverage & Peak Utils -----------------------
+sorted_bedgraph:
+  input:
+    bedgraph: "results/bedtools_genomecov"
+  output: 
+    sorted_bedgraph: "results/sorted_bedgraph"
+  threads: 4
+  resources:
+    mem_mb: 8000
+    time: "02:00:00"
+
+bigwig:
+  input:
+    sorted_bedgraph: "results/sorted_bedgraph"
+  output: 
+    bigwig: "results/bigwig"
+  params:
+    genome: "data/reference/genome.chrom.sizes"
+  threads: 4
+  resources:
+    mem_mb: 8000
+    time: "02:00:00"
+
+preseq:
+  input:
+    markdup_bam_index: "results/samtools_index_post_markdup"
+    markdup_bam: "results/samtools_markdup"
+  output: 
+    predicted_complexity: "results/preseq"
+  threads: 2
+  resources: 
+    mem_mb: 4000
+    time: "01:00:00"
+
+qualimap_bamqc:
+  input:
+    markdup_bam: "results/samtools_markdup"
+  output: 
+    qc_dir: "results/qualimap"
+  threads: 4
+  resources: 
+    mem_mb: 8000
+    time: "02:00:00"
+
+bam_to_fragments:
+  input:
+    bam: "results/samtools_view"
+  output:
+    fragments: "results/fragments"
+  threads: 4
+  resources:
+    mem_mb: 8000
+    time: "01:00:00"
+
+# ------------------------ Spike-in Normalization -----------------------
+spike_in_align:
+  input:
+    R1: "results/fastp"
+    R2: "results/fastp"
+  output:
+    bam: "results/spike_in"
+  params:
+    index: "data/reference/ecoli/bowtie2/ecoli"
+    extra: "--end-to-end --very-sensitive --no-overlap --no-dovetail --no-mixed --no-discordant --phred33 -I 10 -X 700"
+  threads: 8
+  resources:
+    mem_mb: 8000
+    time: "02:00:00"
+
+spike_in_calibration:
+  input:
+    bam: "results/spike_in"
+  output:
+    scaling_factor: "results/spike_in"
+  params:
+    scale_constant: 1000000
+  threads: 2
+  resources:
+    mem_mb: 2000
+    time: "00:30:00"
+
+bedtools_genomecov:
+  input:
+    fragments: "results/fragments"
+    scaling_factor: "results/spike_in"
+  output: 
+    bedgraph: "results/bedtools_genomecov"
+  params:
+    extra: "-bg"
+  threads: 4
+  resources:
+    mem_mb: 8000
+    time: "02:00:00"
+
+fragment_size_analysis:
+  input:
+    fragments: "results/fragments"
+  output: "results/fragment_size_analysis"
+  params:
+    min_length: 10
+    max_length: 500
+    max_fragment: 1000
+  threads: 4
+  resources: 
+    mem_mb: 4000
+    time: "01:00:00"
+
+heatmap:
+  input:
+    filtered_peaks: "results/filtered_peaks"
+    bigwig: "results/bigwig"
+  output:
+    matrix: "results/heatmap"
+    regions: "results/heatmap"
+    plot: "results/heatmap"
+  params:
+    upstream: 3000
+    downstream: 3000
+    colormap: "coolwarm"
+    bin_size: 10
+  threads: 4
+  resources:
+    mem_mb: 8000
+    time: "02:00:00"
+
+peak_annotation:
+  input:
+    filtered_peaks: "results/filtered_peaks"
+  output: "results/peak_annotation"
+  params:
+    feature_types: "gene,exon,CDS"
+  threads: 2
+  resources:
+    mem_mb: 8000
+    time: "01:00:00"
+
+seacr:
+  input:
+    sorted_bedgraph: "results/sorted_bedgraph"
+  output: 
+    peaks: "results/seacr"
+  threads: 1
+  params:
+    background: 0.01
+    norm: "non"
+    stringency: "stringent"
+  resources:
+    mem_mb: 8000
+    time: "01:00:00"
+
+
+blacklist_region_filter:
+  input:
+    peaks: "results/seacr"
+  output:
+    filtered_peaks: "results/filtered_peaks"
+  threads: 2
+  resources:
+    mem_mb: 4000
+    time: "01:00:00"
+
+motif_analysis:
+  input:
+    filtered_peaks: "results/filtered_peaks"
+  output: "results/motif_analysis"
+  threads: 4
+  resources:
+    mem_mb: 8000
+    time: "02:00:00"
+
+multiqc:
+  output:
+    report: "results/multiqc"
+  threads: 2
+  resources:
+    mem_mb: 4000
+    time: "01:00:00"
+
+# ------------------------ Correlation Analysis -----------------------
+correlation_analysis:
+  input:
+    bigwig: "results/bigwig"
+  output: "results/correlation_analysis"
+  params:
+    bin_size: 1000
+  threads: 4
+  resources:
+    mem_mb: 8000
+    time: "02:00:00"

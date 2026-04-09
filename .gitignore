@@ -1,0 +1,41 @@
+# --- Agent/IDE tool files ---
+.claude/
+.gitnexus/
+AGENTS.md
+CLAUDE.md
+
+# ========================
+# Snakemake CUT&RUN Pipeline
+# ========================
+
+# --- Snakemake internals ---
+.snakemake/
+
+# --- Results & intermediate outputs ---
+results/
+logs/
+benchmarks/
+
+# --- Data (raw + reference) ---
+data/
+
+# --- Conda/Singularity caches ---
+.conda/
+.singularity/
+
+# --- OS / Editor junk ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Temporary files ---
+*.tmp
