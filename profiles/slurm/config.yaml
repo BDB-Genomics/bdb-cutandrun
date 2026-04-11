@@ -13,10 +13,14 @@ rerun-incomplete: true
 restart-times: 1
 
 # Resources to use if a rule doesn't specify them.
-# Your rules define their own memory/CPU, so Snakemake will use those 
+# Rules define their own memory/CPU, so Snakemake will use those 
 # instead of these defaults for most tasks.
 default-resources:
   - mem_mb=4000
   - time="01:00:00"
   - threads=1
   - slurm_partition="standard"
+
+
+
+
