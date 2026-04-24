@@ -1,0 +1,177 @@
+<svg width="860" height="500" viewBox="0 0 860 500" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+<rect width="100%" height="100%" fill="white"/>
+<text x="430" y="30" text-anchor="middle" font-family="system-ui,sans-serif" font-size="16" font-weight="bold" fill="#1a1a2e">CUT&amp;RUN Snakemake Pipeline DAG</text>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.2s" fill="freeze"/>
+  <rect x="30" y="60" width="90" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="75" y="78" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">FASTQ</text>
+  <text x="75" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">Raw Reads</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.4s" fill="freeze"/>
+  <path d="M120 80 L140 80" fill="none" stroke="#888" stroke-width="1.2" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.6s" fill="freeze"/>
+  <rect x="140" y="60" width="90" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="185" y="78" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">fastp</text>
+  <text x="185" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">Trim</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.8s" fill="freeze"/>
+  <path d="M230 80 L260 80" fill="none" stroke="#888" stroke-width="1.2" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.0s" fill="freeze"/>
+  <rect x="260" y="60" width="140" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="330" y="78" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">Bowtie2 (Target)</text>
+  <text x="330" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">Main alignment</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.8s" fill="freeze"/>
+  <path d="M230 100 L260 100 L260 140" fill="none" stroke="#888" stroke-width="1.2" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.0s" fill="freeze"/>
+  <rect x="260" y="120" width="140" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="330" y="138" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">Bowtie2 (E. coli)</text>
+  <text x="330" y="152" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">Spike-in alignment</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.6s" fill="freeze"/>
+  <path d="M400 80 L430 80" fill="none" stroke="#888" stroke-width="1.2" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.8s" fill="freeze"/>
+  <rect x="430" y="60" width="100" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="480" y="78" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">filter / sort</text>
+  <text x="480" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">MAPQ &amp; chrM</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="2.0s" fill="freeze"/>
+  <path d="M530 80 L560 80" fill="none" stroke="#888" stroke-width="1.2" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.2s" fill="freeze"/>
+  <rect x="560" y="60" width="100" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="610" y="78" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">markdup</text>
+  <text x="610" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">Deduplicate</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.6s" fill="freeze"/>
+  <path d="M400 140 L430 140" fill="none" stroke="#888" stroke-width="1.2" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.8s" fill="freeze"/>
+  <rect x="430" y="120" width="230" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="545" y="138" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">Calibration Factor</text>
+  <text x="545" y="152" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">Calculate scaling factor</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="2.4s" fill="freeze"/>
+  <path d="M660 80 L690 80" fill="none" stroke="#888" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="2.4s" fill="freeze"/>
+  <path d="M660 140 L715 140 L715 120" fill="none" stroke="#888" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.6s" fill="freeze"/>
+  <rect x="690" y="60" width="140" height="60" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="760" y="88" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">Scaled BedGraph</text>
+  <text x="760" y="102" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">Spike-in normalized</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="2.8s" fill="freeze"/>
+  <path d="M760 120 L760 150" fill="none" stroke="#888" stroke-width="1.2" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="3.0s" fill="freeze"/>
+  <rect x="690" y="150" width="140" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="760" y="168" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">SEACR</text>
+  <text x="760" y="182" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">Call stringent/relaxed</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="3.2s" fill="freeze"/>
+  <path d="M760 190 L760 220" fill="none" stroke="#888" stroke-width="1.2" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="3.4s" fill="freeze"/>
+  <rect x="690" y="220" width="140" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="760" y="238" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">ChIPseeker</text>
+  <text x="760" y="252" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">Peak Annotation</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="3.6s" fill="freeze"/>
+  <path d="M690 240 L660 240" fill="none" stroke="#888" stroke-width="1.2" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="3.8s" fill="freeze"/>
+  <rect x="520" y="220" width="140" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="590" y="238" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">HOMER</text>
+  <text x="590" y="252" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">Motif Discovery</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="4.0s" fill="freeze"/>
+  <path d="M690 90 L630 90" fill="none" stroke="#888" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="4.2s" fill="freeze"/>
+  <rect x="490" y="170" width="140" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="560" y="188" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">BigWig</text>
+  <text x="560" y="202" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">Normalized tracks</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="4.4s" fill="freeze"/>
+  <path d="M490 190 L460 190" fill="none" stroke="#888" stroke-width="1.2" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="4.6s" fill="freeze"/>
+  <rect x="320" y="170" width="140" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="390" y="188" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">plotHeatmap</text>
+  <text x="390" y="202" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">TSS Profile</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="4.8s" fill="freeze"/>
+  <path d="M185 100 L185 300" fill="none" stroke="#888" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="5.0s" fill="freeze"/>
+  <rect x="130" y="300" width="110" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="185" y="318" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">FastQC</text>
+  <text x="185" y="332" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">Read QC</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="4.8s" fill="freeze"/>
+  <path d="M610 100 L610 300" fill="none" stroke="#888" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="5.0s" fill="freeze"/>
+  <rect x="555" y="300" width="110" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="610" y="318" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">Qualimap</text>
+  <text x="610" y="332" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">BAM QC</text>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="5.2s" fill="freeze"/>
+  <path d="M185 340 L185 400" fill="none" stroke="#888" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="5.2s" fill="freeze"/>
+  <path d="M610 340 L610 400" fill="none" stroke="#888" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="5.2s" fill="freeze"/>
+  <path d="M760 260 L610 260 L610 400" fill="none" stroke="#888" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+</g>
+<g opacity="0">
+  <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="5.4s" fill="freeze"/>
+  <rect x="330" y="400" width="400" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.2"/>
+  <text x="530" y="418" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#4A2A04">MultiQC</text>
+  <text x="530" y="432" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854F0B">Aggregated QC Report</text>
+</g>
+</svg>

@@ -1,37 +1,22 @@
-# Modular CUT&RUN Pipeline
+<p align="center">
+  <img src="assets/pipeline_diagram.svg" alt="Pipeline DAG" width="860" />
+</p>
 
-A robust, automated, and highly modular Snakemake pipeline for the analysis of CUT&RUN (Cleavage Under Targets and Release Using Nuclease) sequencing data. This pipeline handles everything from raw FASTQ files to peak annotation and motif analysis, with a core focus on spike-in normalization and reproducible results.
+# BDB-Genomics CUT&RUN Pipeline
+
+<p align="center">
+  <a href="https://github.com/BDB-Genomics/cutandrun-pipeline/actions"><img src="https://img.shields.io/badge/Status-Active_Development-orange" alt="Status"></a>
+  <a href="https://snakemake.readthedocs.io"><img src="https://img.shields.io/badge/Snakemake-Modular-brightgreen.svg" alt="Snakemake"></a>
+</p>
+
+<p align="center">
+  <img src="assets/readme_animation.svg" alt="CUT&RUN Pipeline Overview" width="820" />
+</p>
+
+> A robust, automated, and highly modular Snakemake pipeline for the analysis of CUT&RUN (Cleavage Under Targets and Release Using Nuclease) sequencing data. This pipeline handles everything from raw FASTQ files to peak annotation and motif analysis, with a core focus on spike-in normalization and reproducible results.
 
 **Author:** Himanshu Bhandary  
 **Contact:** 2032ushimanshu@gmail.com
-
----
-
-## 🚀 Key Features
-
-- **End-to-End Workflow:** Automated processing from raw reads to multi-report QC.
-- **Spike-in Normalization:** Integrated E. coli spike-in alignment and calibration for accurate sample comparison.
-- **Modular Design:** Each analysis step is isolated in individual rules for easy customization and maintenance.
-- **Reproducibility:** Uses Conda environments and Singularity containers for consistent software versioning.
-- **Scalability:** Built-in support for local execution or high-performance computing (SLURM).
-
----
-
-## 🛠 Pipeline Overview
-
-1.  **Preprocessing:** Read quality control and adapter trimming (`fastp`, `fastqc`).
-2.  **Alignment:** Dual-index alignment to target and spike-in genomes (`bowtie2`).
-3.  **Post-Alignment Processing:**
-    - Mitochondrial read removal.
-    - Duplicate marking and removal (`samtools markdup`).
-    - MAPQ filtering and fragment extraction.
-4.  **Normalization:** Spike-in calibration based on E. coli read counts to generate scaled BedGraphs.
-5.  **Peak Calling:** Stringent and relaxed peak calling specifically optimized for CUT&RUN (`SEACR`).
-6.  **Downstream Analysis:**
-    - Functional annotation of peaks (`ChIPseeker`).
-    - Motif enrichment analysis (`HOMER`).
-    - Correlation heatmaps and PCA (`deepTools`).
-7.  **Quality Control:** Aggregated metrics and visualization (`MultiQC`, `preseq`, `Qualimap`).
 
 ---
 
