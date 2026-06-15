@@ -80,25 +80,24 @@ def extract_errors(logs_dir="logs"):
     if not os.path.exists(logs_dir):
         return errors
 
-    # CUT&RUN rules use a mix of .log and .err extensions
-    for pattern in ["**/*.log", "**/*.err"]:
-        for filepath in sorted(glob.glob(f"{logs_dir}/{pattern}", recursive=True)):
-            try:
-                with open(filepath, "r") as f:
-                    lines = f.readlines()
-            except (IOError, UnicodeDecodeError):
-                continue
+    # Search all files in the logs directory regardless of extension
+    for filepath in sorted(glob.glob(f"{logs_dir}/**/*", recursive=True)):
+        try:
+            with open(filepath, "r") as f:
+                lines = f.readlines()
+        except (IOError, UnicodeDecodeError):
+            continue
 
-            error_lines = [l.strip() for l in lines if is_actual_error(l)]
-            if error_lines:
-                rule_name = os.path.basename(os.path.dirname(filepath))
-                sample_name = os.path.splitext(os.path.basename(filepath))[0]
-                errors.append({
-                    "rule": rule_name,
-                    "target": sample_name,
-                    "log_file": filepath,
-                    "error_snippets": error_lines[-5:],
-                })
+        error_lines = [l.strip() for l in lines if is_actual_error(l)]
+        if error_lines:
+            rule_name = os.path.basename(os.path.dirname(filepath))
+            sample_name = os.path.splitext(os.path.basename(filepath))[0]
+            errors.append({
+                "rule": rule_name,
+                "target": sample_name,
+                "log_file": filepath,
+                "error_snippets": error_lines[-5:],
+            })
     return errors
 
 
