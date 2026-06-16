@@ -102,12 +102,16 @@ def extract_errors(logs_dir="logs"):
 
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python aggregate_logs.py <status: success/error> <output_json>")
+    if len(sys.argv) < 2:
+        print("Usage: python aggregate_logs.py <status: success/error> [output_json]")
         sys.exit(1)
 
     status = sys.argv[1]
-    output_json = sys.argv[2]
+    
+    if len(sys.argv) > 2:
+        output_json = sys.argv[2]
+    else:
+        output_json = "results/reporting/pipeline_execution_summary.json"
 
     benchmarks = parse_benchmarks("benchmarks")
     total_cpu = sum(m["cpu_time_seconds"] for m in benchmarks)
