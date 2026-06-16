@@ -1,15 +1,40 @@
 # Pipeline Scripts & Telemetry
 
-This directory contains utility scripts used by the CUT&RUN pipeline to handle execution, observability, and data formatting.
+This directory contains utility scripts for the CUT&RUN pipeline.
 
 ## `aggregate_logs.py`
 
-This script is the core of the pipeline's observability architecture. It is automatically triggered by Snakemake upon pipeline completion (both success and failure). It sweeps the `benchmarks/` and `logs/` directories to generate a single, structured JSON report (`pipeline_execution_summary.json`) that can be easily parsed by AI Agents (like LangChain) or human engineers.
+This script is automatically triggered by Snakemake when the pipeline finishes. It sweeps the `benchmarks/` and `logs/` directories to generate a structured JSON report (`pipeline_execution_summary.json`).
 
 ### Key Features
-1. **Extension-Agnostic Log Sweeping:** Uses the `**/*` wildcard combined with an EAFP (Easier to Ask for Forgiveness than Permission) `try-except` block to recursively scan all outputs, ignoring directories and binary corruption gracefully.
-2. **False Positive Filtering:** Prevents JSON bloat by filtering out tools that print harmless success metrics disguised as errors (e.g., "0 errors found", "error rate: 0").
-3. **Automated Resource Calculation:** Parses Snakemake TSV benchmark files to calculate total CPU time and peak memory across the entire run.
+
+**1. Default Path Fallback**
+Prevents `IndexError` crashes by falling back to a default JSON output path if the user or Snakemake does not provide one in the terminal.
+```python
+if len(sys.argv) > 2:
+    output_json = sys.argv[2]
+else:
+    output_json = "results/reporting/pipeline_execution_summary.json"
+```
+
+**2. Extension-Agnostic Sweeping**
+Uses the `**/*` wildcard with a `try/except` block to safely scan all outputs. It gracefully skips directories and unreadable binary files without relying on strict `.log` or `.err` extensions.
+```python
+for filepath in sorted(glob.glob(f"{logs_dir}/**/*", recursive=True)):
+    try:
+        with open(filepath, "r") as f:
+            lines = f.readlines()
+    except (IOError, UnicodeDecodeError):
+        continue
+```
+
+**3. False Positive Filtering**
+Filters out tools that print harmless biology metrics disguised as errors (e.g., "0 errors").
+```python
+false_positives = ["0 error", "no error", "zero error"]
+if any(fp in line_lower for fp in false_positives):
+    return False
+```
 
 ### Data Flow Architecture
 
@@ -17,13 +42,16 @@ This script is the core of the pipeline's observability architecture. It is auto
 graph TD
     %% Main Entry Point
     Start((Pipeline Ends)) --> A[Snakemake calls aggregate_logs.py]
-    A --> B{Did the pipeline fail?}
+    
+    %% Fallback Logic
+    A --> Args{Did user provide <br> output path?}
+    Args -- Yes --> B1[Use provided path]
+    Args -- No --> B2[Use default path]
+    B1 & B2 --> B{Did the pipeline fail?}
 
     %% Path 1: Success
     B -- No (Success) --> C[Parse Benchmarks Only]
-    C --> D[Calculate total_cpu_seconds]
-    C --> E[Calculate peak_memory_mb]
-    D & E --> F[Build JSON Output]
+    C --> F[Build JSON Output]
     F --> G((pipeline_execution_summary.json))
 
     %% Path 2: Failure
@@ -35,13 +63,13 @@ graph TD
     J --> K{Is it a File?}
     
     %% EAFP Handling
-    K -- No (Directory) --> L[try/except catches IOError & Skips]
+    K -- No (Directory) --> L[try/except catches IOError & skips]
     K -- Yes (File) --> M[Read file line-by-line]
     
     %% The Filtering Logic
-    M --> N{Does line contain 'error', 'failed', 'fatal'?}
+    M --> N{Does line contain <br> 'error' or 'failed'?}
     N -- No --> O[Ignore Line]
-    N -- Yes --> P{Is it a False Positive? \n e.g. '0 errors'}
+    N -- Yes --> P{Is it a False Positive? <br> e.g. '0 errors'}
     
     %% Verdict
     P -- Yes --> O
@@ -52,8 +80,7 @@ graph TD
     R --> S[Save last 5 error snippets]
     
     %% Assembly
-    S --> T[Calculate CPU & RAM]
-    T --> U[Build JSON Output with Errors Array]
+    S --> U[Build JSON Output with Errors]
     U --> G
 
     %% Styling
@@ -62,8 +89,8 @@ graph TD
     classDef logic fill:#cce5ff,stroke:#004085,color:#004085;
     classDef artifact fill:#fff3cd,stroke:#856404,color:#856404;
 
-    class B,N,P,K logic;
-    class C,D,E success;
+    class B,N,P,K,Args logic;
+    class C,B1,B2 success;
     class Q,R,S error;
     class G artifact;
 ```
