@@ -1,0 +1,10 @@
+name: snakemake_runner
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.13.7
+  - snakemake=9.9.0
+  - pandas=2.3.3
+  - pyyaml=6.0.2
