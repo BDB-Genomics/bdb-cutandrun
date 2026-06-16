@@ -17,21 +17,54 @@ SAMPLE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 CONFIG_ACCESS_PATTERN = re.compile(r"config((?:\[['\"][^'\"]+['\"]\])+)")
 CONFIG_KEY_PATTERN = re.compile(r"\[['\"]([^'\"]+)['\"]\]")
 SAMPLES_LIST_USAGE_PATTERN = re.compile(r"sample\s*=\s*config\[['\"]samples['\"]\]")
-PATH_CHECKS = (
-    (("bowtie2", "params", "index"), "bowtie2_index"),
-    (("picard_collect_alignment_summary_metrics", "params", "reference_genome"), "file"),
-    (("bigwig", "params", "genome"), "file"),
-    (("blacklist_region_filter", "params", "blacklist"), "file"),
-    (("peak_annotation", "params", "gff"), "file"),
-    (("peak_annotation", "params", "genome"), "file"),
-    (("motif_analysis", "input", "genome"), "file"),
-    (("motif_analysis", "params", "motif_db"), "path"),
-)
+
+
+# ANSI Color codes
+class Colors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
 
 
 def fail(errors: list[str]) -> None:
-    for message in errors:
-        print(f"[CONFIG VALIDATION ERROR] {message}", file=sys.stderr)
+    print(f"\n{Colors.BOLD}{Colors.RED}┏━ CONFIGURATION VALIDATION FAILED ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓{Colors.ENDC}")
+    
+    # Categorize errors
+    categories = {
+        "Reference Files": [],
+        "Sample Sheet": [],
+        "Schema/Keys": [],
+        "Parameters": []
+    }
+    
+    for msg in errors:
+        if any(x in msg for x in ["path not found", "index prefix", "not a file", "Index prefix"]):
+            categories["Reference Files"].append(msg)
+        elif "Sample sheet" in msg or "sample ID" in msg or "FASTQ" in msg or "Sample '" in msg:
+            categories["Sample Sheet"].append(msg)
+        elif "Missing config key" in msg:
+            categories["Schema/Keys"].append(msg)
+        else:
+            categories["Parameters"].append(msg)
+
+    for cat, msgs in categories.items():
+        if msgs:
+            print(f"\n  {Colors.BOLD}{Colors.YELLOW}[{cat}]{Colors.ENDC}")
+            for m in msgs:
+                print(f"    • {m}")
+                # Add specific hints
+                if "data/" in m:
+                    parts = m.split(':')
+                    path_part = parts[-1].strip() if len(parts) > 1 else m
+                    print(f"      {Colors.CYAN}Hint: Check if the file exists at: {Path(path_part).absolute()}{Colors.ENDC}")
+
+    print(f"\n{Colors.BOLD}{Colors.RED}┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛{Colors.ENDC}")
+    print(f"\n{Colors.YELLOW}Check your 'config.yaml' and ensure all required data is in the 'data/' directory.{Colors.ENDC}\n")
     sys.exit(1)
 
 
@@ -139,7 +172,36 @@ def validate_required_config_paths(
 
 
 def validate_scalar_config_values(config: dict[str, Any], errors: list[str]) -> None:
-    positive_int_suffixes = ("threads", "mem_mb", "trim_front1", "trim_front2", "length_required")
+    positive_int_suffixes = (
+        "threads",
+        "mem_mb",
+        "trim_front1",
+        "trim_front2",
+        "length_required",
+        "MAPQ",
+        "flags",
+        "min_length",
+        "max_length",
+        "max_fragment",
+        "upstream",
+        "downstream",
+        "bin_size",
+        "scale_constant",
+    )
+    positive_float_suffixes = (
+        "M",
+        "background",
+    )
+    non_empty_string_suffixes = (
+        "time",
+        "mito_chr",
+        "feature_types",
+        "norm",
+        "stringency",
+        "colormap",
+        "validation_stringency",
+        "remove_duplicates",
+    )
 
     for suffix in positive_int_suffixes:
         for path_keys in iter_matching_paths(config, suffix):
@@ -147,10 +209,19 @@ def validate_scalar_config_values(config: dict[str, Any], errors: list[str]) -> 
             if not isinstance(value, int) or value <= 0:
                 errors.append(f"Config value '{'.'.join(path_keys)}' must be a positive integer.")
 
-    for path_keys in iter_matching_paths(config, "time"):
-        value = get_config_value(config, path_keys)
-        if not isinstance(value, str) or not value.strip():
-            errors.append(f"Config value '{'.'.join(path_keys)}' must be a non-empty string.")
+    for suffix in positive_float_suffixes:
+        for path_keys in iter_matching_paths(config, suffix):
+            value = get_config_value(config, path_keys)
+            if not isinstance(value, (int, float)) or value < 0:
+                errors.append(f"Config value '{'.'.join(path_keys)}' must be a non-negative number.")
+
+    for suffix in non_empty_string_suffixes:
+        for path_keys in iter_matching_paths(config, suffix):
+            value = get_config_value(config, path_keys)
+            if suffix == "time" and isinstance(value, (int, float)) and value > 0:
+                continue
+            if not isinstance(value, str) or not value.strip():
+                errors.append(f"Config value '{'.'.join(path_keys)}' must be a non-empty string or a positive number.")
 
 
 def iter_matching_paths(config: dict[str, Any], leaf_key: str) -> list[tuple[str, ...]]:
@@ -176,7 +247,7 @@ def validate_samples_sheet(
     if samples_value is None:
         return []
     if not isinstance(samples_value, str) or not samples_value.strip():
-        errors.append("Config key 'samples' must be a non-empty path string to a TSV sample sheet.")
+        errors.append("Config key 'global.samples' must be a non-empty path string to a TSV sample sheet.")
         return []
 
     bases = [config_path.parent, root, Path.cwd()]
@@ -184,7 +255,7 @@ def validate_samples_sheet(
     if samples_path is None:
         rendered = ", ".join(str(path) for path in candidate_paths(samples_value, bases))
         errors.append(
-            "Sample sheet not found for config key 'samples'. Checked: " + rendered
+            "Sample sheet not found for config key 'global.samples'. Checked: " + rendered
         )
         return []
     if not samples_path.is_file():
@@ -354,29 +425,38 @@ def validate_path_checks(
     config: dict[str, Any], config_path: Path, root: Path, errors: list[str]
 ) -> None:
     bases = [config_path.parent, root, Path.cwd()]
-    for path_keys, check_kind in PATH_CHECKS:
-        value = get_config_value(config, path_keys)
-        if not isinstance(value, str) or not value.strip():
-            continue
+    
+    def walk(prefix: tuple[str, ...], node: Any) -> None:
+        if not isinstance(node, dict):
+            return
+        for key, value in node.items():
+            next_prefix = prefix + (key,)
+            if isinstance(value, dict):
+                walk(next_prefix, value)
+            elif isinstance(value, str) and value.strip():
+                # Dynamically validate static reference file paths (under global)
+                # or pipeline tool resources (script/config)
+                is_global_ref = (next_prefix[0] == "global" and (
+                    key.endswith(("_fa", "_bed", "_gtf", "_index", "_sizes", "_db")) or
+                    key == "blacklist"
+                ))
+                is_tool_resource = (key in ("script", "config"))
 
-        if check_kind == "bowtie2_index":
-            if not bowtie2_index_exists(value, bases):
-                errors.append(
-                    "Bowtie2 index prefix not found for config key "
-                    f"'{'.'.join(path_keys)}': {value}"
-                )
-            continue
+                if is_global_ref or is_tool_resource:
+                    if key in ("bowtie_index", "ecoli_index", "bowtie2_index"):
+                        if not bowtie_index_exists(value, bases):
+                            errors.append(f"Index prefix not found for config key '{'.'.join(next_prefix)}': {value}")
+                    else:
+                        resolved = resolve_existing_path(value, bases)
+                        if resolved is None:
+                            errors.append(f"Configured path not found for '{'.'.join(next_prefix)}': {value}")
+                        elif not resolved.is_file():
+                            errors.append(f"Configured path for '{'.'.join(next_prefix)}' must be a file: {resolved}")
 
-        path_bases = [root / "rules", *bases] if check_kind == "workflow_file" else bases
-        resolved = resolve_existing_path(value, path_bases)
-        if resolved is None:
-            errors.append(f"Configured path not found for '{'.'.join(path_keys)}': {value}")
-            continue
-        if check_kind in {"file", "workflow_file"} and not resolved.is_file():
-            errors.append(f"Configured path for '{'.'.join(path_keys)}' must be a file: {resolved}")
+    walk((), config)
 
 
-def bowtie2_index_exists(index_prefix: str, bases: list[Path]) -> bool:
+def bowtie_index_exists(index_prefix: str, bases: list[Path]) -> bool:
     for prefix in candidate_paths(index_prefix, bases):
         if prefix.exists():
             return True
@@ -401,9 +481,32 @@ def validate_samples_usage(root: Path, config: dict[str, Any], errors: list[str]
 
     if offenders and isinstance(samples_value, str):
         errors.append(
-            "Top-level config key 'samples' is a sample-sheet path string, but these rules use it "
+            "Top-level config key 'global.samples' is a sample-sheet path string, but these rules use it "
             "as a list of sample names: " + ", ".join(offenders)
         )
+
+
+def validate_conda_environments(root: Path, errors: list[str]) -> None:
+    conda_pattern = re.compile(r"conda:\s*['\"]([^'\"]+)['\"]")
+    workflow_files = sorted((root / "rules").glob("*.smk"))
+
+    for workflow_file in workflow_files:
+        if not workflow_file.exists():
+            continue
+        with workflow_file.open("r", encoding="utf-8") as handle:
+            for line_no, line in enumerate(handle, start=1):
+                match = conda_pattern.search(line)
+                if match:
+                    conda_path_str = match.group(1)
+                    # Snakemake resolves conda: paths relative to the .smk file's
+                    # directory, so "envs/foo.yaml" in rules/bar.smk resolves to
+                    # rules/envs/foo.yaml — mirror that behaviour here.
+                    resolved_path = (workflow_file.parent / conda_path_str).resolve()
+                    if not resolved_path.exists():
+                        errors.append(
+                            f"Conda environment file not found: '{conda_path_str}' "
+                            f"(referenced in {workflow_file.relative_to(root)}:{line_no})"
+                        )
 
 
 def main() -> None:
@@ -422,6 +525,7 @@ def main() -> None:
         validate_fastp_input_mapping(config, sample_records, config_path, root, errors)
         validate_path_checks(config, config_path, root, errors)
         validate_samples_usage(root, config, errors)
+        validate_conda_environments(root, errors)
 
     if errors:
         fail(errors)
