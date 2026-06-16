@@ -145,7 +145,7 @@ graph TD
     Gate1 -- No --> Fail[Print Categorized Errors & Exit 1]
     
     %% Gate 2
-    Gate1 -- Yes --> B[Scan Smk files for config[...] keys]
+    Gate1 -- Yes --> B["Scan Smk files for config[...] keys"]
     B --> Gate2{Do all keys exist in config.yaml?}
     Gate2 -- No --> Fail
     
