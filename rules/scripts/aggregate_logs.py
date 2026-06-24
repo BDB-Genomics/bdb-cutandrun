@@ -6,42 +6,48 @@ Sweeps logs/ and benchmarks/ directories, filters noise and false positives,
 and produces a clean pipeline_execution_summary.json for humans and AI agents.
 """
 
-import os
-import json
-import sys
-import glob
 import csv
+import json
+import pathlib
+import sys
+from collections import deque
 from datetime import datetime
+from typing import Any
 
 
-def parse_benchmarks(benchmarks_dir="benchmarks"):
+def parse_benchmarks(benchmarks_dir: pathlib.Path) -> list[dict[str, Any]]:
     """Parse all Snakemake benchmark TSV files into structured dicts.
 
     Each benchmark file contains columns like: s, h:m:s, max_rss, max_vms, etc.
     """
-    metrics = []
-    if not os.path.exists(benchmarks_dir):
+    metrics: list[dict[str, Any]] = []
+    if not benchmarks_dir.exists():
         return metrics
 
-    for filepath in sorted(glob.glob(f"{benchmarks_dir}/**/*.txt", recursive=True)):
-        rule_name = os.path.basename(os.path.dirname(filepath))
-        sample_name = os.path.basename(filepath).replace(".txt", "")
+    for filepath in sorted(benchmarks_dir.rglob("*.txt")):
+        rule_name = filepath.parent.name
+        sample_name = filepath.stem
         try:
             with open(filepath, "r") as f:
                 reader = csv.DictReader(f, delimiter="\t")
                 for row in reader:
-                    metrics.append({
-                        "rule": rule_name,
-                        "sample": sample_name,
-                        "cpu_time_seconds": float(row.get("s", 0)),
-                        "peak_memory_mb": float(row.get("max_rss", 0)),
-                    })
-        except (ValueError, KeyError):
+                    try:
+                        metrics.append(
+                            {
+                                "rule": rule_name,
+                                "sample": sample_name,
+                                "cpu_time_seconds": float(row.get("s", 0)),
+                                "peak_memory_mb": float(row.get("max_rss", 0)),
+                            }
+                        )
+                    except (ValueError, KeyError):
+                        continue
+        except (IOError, UnicodeDecodeError):
             continue
     return metrics
 
 
-def is_actual_error(line):
+def is_actual_error(line: str) -> bool:
     """Determine if a log line contains a real error, filtering out false positives.
 
     Many bioinformatics tools emit lines like '0 errors found' or 'error rate: 0.00%'
@@ -59,10 +65,22 @@ def is_actual_error(line):
 
     # Filter out common false positive messages
     false_positives = [
-        "0 error", "no error", "zero error", "error rate: 0", "errors: 0",
-        "no exception", "0 exception", "exception: none", "successful",
-        "0 failed", "no failed", "errors = 0", "error_rate", "overall error",
-        "alignment error rate", "mismatch error",
+        "0 error",
+        "no error",
+        "zero error",
+        "error rate: 0",
+        "errors: 0",
+        "no exception",
+        "0 exception",
+        "exception: none",
+        "successful",
+        "0 failed",
+        "no failed",
+        "errors = 0",
+        "error_rate",
+        "overall error",
+        "alignment error rate",
+        "mismatch error",
     ]
     if any(fp in line_lower for fp in false_positives):
         return False
@@ -70,52 +88,64 @@ def is_actual_error(line):
     return True
 
 
-def extract_errors(logs_dir="logs"):
+def extract_errors(logs_dir: pathlib.Path) -> list[dict[str, Any]]:
     """Walk the logs/ directory and extract genuine error lines from log files.
 
     Scans both .log and .err files (CUT&RUN uses both patterns).
     Returns the last 5 real error lines per file to keep the output concise.
     """
-    errors = []
-    if not os.path.exists(logs_dir):
+    errors: list[dict[str, Any]] = []
+    if not logs_dir.exists():
         return errors
 
-    # Search all files in the logs directory regardless of extension
-    for filepath in sorted(glob.glob(f"{logs_dir}/**/*", recursive=True)):
+    # Search all files in the logs directory
+    for filepath in sorted(logs_dir.rglob("*")):
+        if not filepath.is_file():
+            continue
+
+        error_lines: deque[str] = deque(maxlen=5)
         try:
             with open(filepath, "r") as f:
-                lines = f.readlines()
+                for line in f:
+                    stripped_line = line.strip()
+                    if is_actual_error(stripped_line):
+                        error_lines.append(stripped_line)
         except (IOError, UnicodeDecodeError):
             continue
 
-        error_lines = [l.strip() for l in lines if is_actual_error(l)]
         if error_lines:
-            rule_name = os.path.basename(os.path.dirname(filepath))
-            sample_name = os.path.splitext(os.path.basename(filepath))[0]
-            errors.append({
-                "rule": rule_name,
-                "target": sample_name,
-                "log_file": filepath,
-                "error_snippets": error_lines[-5:],
-            })
+            rule_name = filepath.parent.name
+            sample_name = filepath.stem
+            errors.append(
+                {
+                    "rule": rule_name,
+                    "target": sample_name,
+                    "log_file": str(filepath),
+                    "error_snippets": list(error_lines),
+                }
+            )
     return errors
 
 
-def main():
+def main() -> None:
     if len(sys.argv) < 2:
         print("Usage: python aggregate_logs.py <status: success/error> [output_json]")
         sys.exit(1)
 
     status = sys.argv[1]
-    
-    if len(sys.argv) > 2:
-        output_json = sys.argv[2]
-    else:
-        output_json = "results/reporting/pipeline_execution_summary.json"
+    root = pathlib.Path(__file__).resolve().parents[2]
 
-    benchmarks = parse_benchmarks("benchmarks")
+    if len(sys.argv) > 2:
+        output_json = pathlib.Path(sys.argv[2])
+    else:
+        output_json = root / "results/reporting/pipeline_execution_summary.json"
+
+    benchmarks_dir = root / "benchmarks"
+    logs_dir = root / "logs"
+
+    benchmarks = parse_benchmarks(benchmarks_dir)
     total_cpu = sum(m["cpu_time_seconds"] for m in benchmarks)
-    peak_mem = max((m["peak_memory_mb"] for m in benchmarks), default=0)
+    peak_mem = max((m["peak_memory_mb"] for m in benchmarks), default=0.0)
 
     summary = {
         "pipeline": "BDB-Genomics/cutandrun-pipeline",
@@ -125,10 +155,10 @@ def main():
         "peak_memory_mb": round(peak_mem, 2),
         "rules_profiled": len(benchmarks),
         "performance_metrics": benchmarks,
-        "errors": extract_errors("logs") if status == "error" else [],
+        "errors": extract_errors(logs_dir) if status == "error" else [],
     }
 
-    os.makedirs(os.path.dirname(output_json) or ".", exist_ok=True)
+    output_json.parent.mkdir(parents=True, exist_ok=True)
     with open(output_json, "w") as f:
         json.dump(summary, f, indent=4)
 
