@@ -45,25 +45,126 @@ graph TD
 
 ---
 
-## 1. Configuration Validation (`validate_config.py`)
+## 📁 Individual Script Details
+*Click on a script below to expand its specific critical features, code architecture, and logic flowchart.*
+
+<details>
+<summary><b><code>► validate_config.py</code></b> (Startup Validation)</summary>
+
+<br>
+
 **When it runs:** Immediately at pipeline startup.
 
-Ensures fail-fast behavior before compute resources are wasted. 
-- **Dynamic Key Discovery:** Scans all `.smk` rule files to guarantee every requested `config.yaml` key exists.
-- **Path Verification:** Checks that sample sheet FASTQs, global reference genomes, and Conda `.yaml` environments physically exist on disk.
+Ensures fail-fast behavior before compute resources are wasted by verifying that the `config.yaml` and environment files are completely robust.
 
-## 2. QC Gating (`parse_qc_metrics.py`)
+### Critical Features
+- **Dynamic Configuration Key Discovery:** Scans all `.smk` rule files using Regular Expressions to dynamically guarantee every requested key actually exists in the config.
+  ```python
+  for raw_keys in CONFIG_ACCESS_PATTERN.findall(line):
+      keys = tuple(CONFIG_KEY_PATTERN.findall(raw_keys))
+      if keys:
+          paths.add(keys)
+  ```
+- **Conda Environment Validation:** Verifies that the referenced `.yaml` environment files physically exist on disk before Snakemake attempts to build them.
+
+### Validation Flowchart
+```mermaid
+graph TD
+    Start([Run validate_config.py]) --> A[Load config.yaml]
+    A --> Gate1{Is YAML valid?}
+    Gate1 -- No --> Fail[Exit 1]
+    Gate1 -- Yes --> B["Scan Smk files for config keys"]
+    B --> Gate2{Do all keys exist?}
+    Gate2 -- No --> Fail
+    Gate2 -- Yes --> Success([Start Snakemake])
+
+    classDef error fill:#f8d7da,stroke:#dc3545,color:#721c24;
+    classDef success fill:#d4edda,stroke:#28a745,color:#155724;
+    class Fail error;
+    class Success success;
+```
+
+</details>
+
+<details>
+<summary><b><code>► parse_qc_metrics.py</code></b> (QC Gating)</summary>
+
+<br>
+
 **When it runs:** After alignment and peak calling for each individual sample.
 
-Evaluates sample quality against strict, user-defined thresholds (e.g., FRiP, TSS Enrichment, Mapping Rate, Duplication Rate).
-- **Hard Gating:** Failing samples immediately halt to prevent downstream statistical noise.
-- **MultiQC Integration:** Outputs clean JSON telemetry that automatically feeds into the final MultiQC dashboard.
-- **Strictly Typed:** Fully `mypy`-compliant for rock-solid runtime safety.
+Evaluates sample quality against strict, user-defined thresholds (like FRiP or Target Mapping Rate).
 
-## 3. Telemetry Aggregation (`aggregate_logs.py`)
+### Critical Features
+- **Hard Gating & MultiQC Integration:** Failing samples immediately halt. Output telemetry is written directly to a JSON file for dashboard integration.
+- **Strictly Typed & Linted:** Uses `mypy` strict type annotations and modern formatting for highly robust execution.
+  ```python
+  def parse_frip(frip_path: str) -> float | None:
+      ...
+  ```
+
+### QC Logic Flowchart
+```mermaid
+graph TD
+    Start([Run parse_qc_metrics.py]) --> A[Load FRiP, TSS, and BAM Stats]
+    A --> B{Are values missing?}
+    B -- Yes --> Fail[Flag as Failed]
+    B -- No --> C[Calculate Metrics]
+    C --> D{Metrics >= Target?}
+    D -- No --> Fail
+    D -- Yes --> Success[Flag as Passed]
+    Fail --> Output[Write JSON & Log]
+    Success --> Output
+    Output --> Check{Overall FAILED?}
+    Check -- Yes --> Kill([sys.exit 1 to halt downstream])
+
+    classDef error fill:#f8d7da,stroke:#dc3545,color:#721c24;
+    classDef success fill:#d4edda,stroke:#28a745,color:#155724;
+    class Fail,Kill error;
+    class Success success;
+```
+
+</details>
+
+<details>
+<summary><b><code>► aggregate_logs.py</code></b> (Telemetry Aggregation)</summary>
+
+<br>
+
 **When it runs:** At the very end of the pipeline (on both success and failure).
 
-Sweeps all generated `benchmarks/` and `logs/` to produce a human- and AI-readable JSON summary.
-- **Memory Safe:** Streams massive bioinformatics log files line-by-line using a rolling `deque` buffer to prevent Out-Of-Memory (OOM) crashes in CI/CD runners.
-- **Robust Parsing:** Scopes exceptions to individual rows to entirely eliminate the risk of silent data drops.
-- **False Positive Filtering:** Intelligently ignores tools that print harmless biology metrics (e.g., "0 errors").
+Sweeps all generated `benchmarks/` and `logs/` to produce a final, summarized JSON report for humans and AI agents.
+
+### Critical Features
+- **Memory Safe Streaming (OOM Protection):** Streams massive log files line-by-line using a rolling `deque` buffer to completely prevent Out-Of-Memory crashes.
+  ```python
+  error_lines: deque[str] = deque(maxlen=5)
+  with open(filepath, "r") as f:
+      for line in f:
+          if is_actual_error(line):
+              error_lines.append(line.strip())
+  ```
+- **False Positive Filtering:** Intelligently ignores tools that print harmless biology metrics disguised as errors.
+  ```python
+  false_positives = ["0 error", "no error", "zero error"]
+  if any(fp in line_lower for fp in false_positives):
+      return False
+  ```
+
+### Aggregation Flowchart
+```mermaid
+graph TD
+    Start([Run aggregate_logs.py]) --> A{Did the pipeline fail?}
+    A -- No (Success) --> B[Parse Benchmarks]
+    A -- Yes (Error) --> C[Parse Benchmarks & Scan logs/]
+    
+    C --> D[Stream log files line-by-line]
+    D --> E{Contains 'error' <br> but NOT '0 errors'?}
+    E -- Yes --> F[Add to deque buffer]
+    
+    B --> G
+    F --> G[Build JSON Output]
+    G --> End([pipeline_execution_summary.json])
+```
+
+</details>
