@@ -1,88 +1,66 @@
-<p align="center">
-  <img src="assets/pipeline_diagram.svg" alt="Pipeline DAG" width="860" />
-</p>
-
 # BDB-Genomics CUT&RUN Pipeline
 
-<p align="center">
-  <a href="https://github.com/BDB-Genomics/cutandrun-pipeline/actions"><img src="https://img.shields.io/badge/Status-Active_Development-orange" alt="Status"></a>
-  <a href="https://snakemake.readthedocs.io"><img src="https://img.shields.io/badge/Snakemake-Modular-brightgreen.svg" alt="Snakemake"></a>
-</p>
-
-<p align="center">
-  <img src="assets/readme_animation.svg" alt="CUT&RUN Pipeline Overview" width="820" />
-</p>
-
-> A robust, automated, and highly modular Snakemake pipeline for the analysis of CUT&RUN (Cleavage Under Targets and Release Using Nuclease) sequencing data. This pipeline handles everything from raw FASTQ files to peak annotation and motif analysis, with a core focus on spike-in normalization and reproducible results.
-
-**Author:** Himanshu Bhandary  
-**Contact:** 2032ushimanshu@gmail.com
+This repository hosts a robust, highly automated Snakemake pipeline designed for CUT&RUN (Cleavage Under Targets and Release Using Nuclease) sequencing data. It provides end-to-end processing—from raw FASTQ quality control and Bowtie2 alignment, to stringent deduplication, Spike-in calibration, SEACR peak calling, and final motif/heatmap generation. The pipeline is fully containerized, strictly typed, and fortified with automated quality control gating to ensure high reproducibility and fail-safe execution.
 
 ---
 
-## 📁 Directory Structure
+## 🏗️ Pipeline Architecture
 
-```text
-├── Snakefile               # Main workflow entry point
-├── config.yaml            # Pipeline parameters and global paths
-├── data/
-│   ├── samples.tsv        # Sample metadata and FASTQ paths
-│   └── reference/         # Genome indices, blacklists, and GTFs
-├── rules/                 # Individual Snakemake rule modules
-│   ├── envs/              # Conda environment definitions
-│   └── scripts/           # Custom validation and analysis scripts
-├── profiles/              # Execution profiles (local, slurm)
-├── results/               # Final processed data and analysis
-└── logs/                  # Detailed execution logs for debugging
+```mermaid
+graph TD
+    %% Input
+    Raw[Raw FASTQ Files] --> FastP[fastp<br>QC & Trimming]
+    
+    %% Alignment Branching
+    FastP --> AlignTarget[Bowtie2<br>Target Genome]
+    FastP --> AlignSpike[Bowtie2<br>Spike-in Genome]
+    
+    %% Target Processing
+    AlignTarget --> Sort[samtools sort]
+    Sort --> Mito[Remove Mitochondrial Reads]
+    Mito --> Dedup[samtools markdup]
+    Dedup --> Filter[samtools view<br>Filter MAPQ]
+    Filter --> Blacklist[Remove Blacklisted Regions]
+    
+    %% QC & Gating
+    Blacklist -.-> Picard[Picard & Qualimap QC]
+    Blacklist -.-> QCGate{QC Gate<br>parse_qc_metrics.py}
+    
+    %% Spike in Calibration
+    AlignSpike --> SpikeCalib[Spike-in Calibration Factor]
+    
+    %% Fragments & Coverage
+    QCGate -- Pass --> Fragments[Extract Fragments]
+    Fragments --> BedGraph[bedtools genomecov]
+    
+    %% Normalization applies to Coverage
+    SpikeCalib -.->|Normalization| BedGraph
+    
+    %% Peak Calling
+    BedGraph --> BigWig[Generate BigWig]
+    BedGraph --> SEACR[SEACR Peak Calling]
+    
+    %% Downstream Analysis
+    SEACR --> PeakAnnot[Peak Annotation]
+    SEACR --> Motif[Motif Analysis]
+    BigWig --> Heatmap[TSS Heatmaps]
+    BigWig --> Correlation[Correlation Analysis]
+    
+    %% Reporting
+    Picard -.-> MultiQC
+    PeakAnnot -.-> MultiQC
+    MultiQC[MultiQC Report &<br>aggregate_logs.py JSON]
+    
+    %% Styling Classes
+    classDef input fill:#f8f9fa,stroke:#6c757d,color:#000;
+    classDef process fill:#e2e3e5,stroke:#383d41,color:#000;
+    classDef analysis fill:#d1ecf1,stroke:#0c5460,color:#000;
+    classDef gate fill:#fff3cd,stroke:#856404,color:#856404;
+    classDef report fill:#d4edda,stroke:#28a745,color:#155724;
+
+    class Raw input;
+    class FastP,AlignTarget,AlignSpike,Sort,Mito,Dedup,Filter,Blacklist,Fragments,BedGraph,SpikeCalib process;
+    class SEACR,BigWig,PeakAnnot,Motif,Heatmap,Correlation analysis;
+    class QCGate,Picard gate;
+    class MultiQC report;
 ```
-
----
-
-## ⚙️ Configuration
-
-### 1. Sample Sheet (`data/samples.tsv`)
-Define your samples in a tab-separated format:
-| sample | fastq_r1 | fastq_r2 | replicate | condition |
-| :--- | :--- | :--- | :--- | :--- |
-| WT_R1 | path/to/R1.fq.gz | path/to/R2.fq.gz | 1 | WT |
-
-### 2. Global Parameters (`config.yaml`)
-Update `config.yaml` to point to your reference genomes (Target and Spike-in), blacklist regions, and tool-specific parameters.
-
----
-
-## 💻 Usage
-
-### Prerequisites
-- [Snakemake](https://snakemake.readthedocs.io/)
-- [Conda](https://docs.conda.io/) or [Mamba](https://mamba.readthedocs.io/)
-- [Singularity](https://sylabs.io/guides/3.0/user-guide/index.html) (optional, for containerized runs)
-
-### Execution
-
-**Validate configuration:**
-The pipeline automatically validates your config and sample sheet before starting.
-
-**Run locally:**
-```bash
-snakemake --profile profiles/local
-```
-
-**Run on SLURM cluster:**
-```bash
-snakemake --profile profiles/slurm
-```
-
----
-
-## 📊 Outputs
-
-- **`results/bigwig/`**: Normalized coverage tracks for visualization in IGV.
-- **`results/seacr/`**: Identified peaks (stringent/relaxed).
-- **`results/peak_annotation/`**: Feature distribution and genomic annotations.
-- **`results/multiqc/`**: Comprehensive HTML report summarizing the entire run.
-
----
-
-## 📄 License
-This project is intended for research purposes. Please contact the author for specific licensing inquiries.
