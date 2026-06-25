@@ -29,29 +29,6 @@ rule heatmap:
     message:
         "[deepTools heatmap] Sample: {wildcards.sample} | BigWig: {input.bigwig} | Peaks: {input.filtered_peaks} | Output: {output.plot}"
         
-    shell:
-        """
-        set -euo pipefail
-        computeMatrix reference-point \
-            --referencePoint TSS \
-            -b {params.upstream} -a {params.downstream} \
-            -R {input.filtered_peaks} \
-            -S {input.bigwig} \
-            --skipZeros \
-            --missingDataAsZero \
-            --binSize {params.binsize} \
-            --numberOfProcessors {threads} \
-            -out {output.matrix} \
-            --outFileSortedRegions {output.regions} \
-            2> {log.matrix} && \
-
-        plotHeatmap \
-            -m {output.matrix} \
-            -out {output.plot} \
-            --colorMap {params.colormap} \
-            --regionsLabel "TSS" \
-            --samplesLabel {wildcards.sample} \
-            --heatmapHeight 12 --heatmapWidth 6 \
-            2>> {log.plot}
-        """
+    script:
+        "scripts/run_heatmap.py"
 

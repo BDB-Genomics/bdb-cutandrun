@@ -24,26 +24,6 @@ rule peak_annotation:
     message:
         "[Peak annotation] Sample: {wildcards.sample} | Peaks: {input.filtered_peaks} | Output: {output.annotation}"
         
-    shell:
-        """
-        set -euo pipefail
-        Rscript -e ' \
-        library(ChIPseeker); \
-        library(GenomicFeatures);\
-        
-        peakfile <- "{input.filtered_peaks}"; \
-        
-        txdb <- makeTxDbFromGFF("{params.gff}", format="gtf"); \
-        peakAnno <- annotatePeak(peakfile, TxDb=txdb, tssRegion=c(-3000, 3000), verbose=FALSE); \
-        
-        #Save detailed annotation
-        write.table(as.data.frame(peakAnno), "{output.annotation}", sep="\t", row.names=FALSE, quote=FALSE); \
-        
-        #Save summary counts per feature
-        feature_summary <- as.data.frame(table(peakAnno@anno$annotation)); \
-        write.table(feature_summary, "{output.summary}", sep="\t", row.names=FALSE, quote=FALSE)' \
-        2> {log}
-        """
-        
-        
+    script:
+        "scripts/peak_annotation.R"
 
