@@ -66,15 +66,13 @@ if is_empty:
     except Exception as e:
         with open(log_plot, "w") as f:
             f.write(f"Error generating dummy plot: {str(e)}\n")
-        # Prevent MissingOutputException crash by touching an empty file
-        open(plot, 'a').close()
 else:
     # Run computeMatrix
     cmd_matrix = [
         "computeMatrix",
         "reference-point",
         "--referencePoint",
-        "center",
+        "TSS",
         "-b",
         str(upstream),
         "-a",
@@ -107,7 +105,7 @@ else:
         "--colorMap",
         colormap,
         "--regionsLabel",
-        "Peak Center",
+        "TSS",
         "--samplesLabel",
         sample,
         "--heatmapHeight",
