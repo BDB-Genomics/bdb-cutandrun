@@ -63,6 +63,7 @@ if is_empty:
             0.5, 0.5, "No peaks found for heatmap", size=15, ha="center", va="center"
         )
         plt.savefig(plot)
+        plt.close(fig)
     except Exception as e:
         with open(log_plot, "w") as f:
             f.write(f"Error generating dummy plot: {str(e)}\n")
