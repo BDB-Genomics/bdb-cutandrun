@@ -21,11 +21,17 @@ class Colors:
     BOLD = "\033[1m"
 
 
-def parse_frip(frip_path: str) -> float | None:
+def parse_frip(frip_path: Path) -> float | None:
     """Parses FRiP value from file (handles headers, single columns, or TSVs)."""
     try:
         with open(frip_path, "r") as f:
-            lines = [line.strip() for line in f if line.strip()]
+            lines: list[str] = []
+            for line in f:
+                stripped = line.strip()
+                if stripped:
+                    lines.append(stripped)
+                    if len(lines) == 2:
+                        break
             if not lines:
                 return None
 
@@ -59,11 +65,17 @@ def parse_frip(frip_path: str) -> float | None:
     return None
 
 
-def parse_tss(tss_path: str) -> float | None:
+def parse_tss(tss_path: Path) -> float | None:
     """Parses TSS Enrichment value from the R script output (headered or single-line TSV)."""
     try:
         with open(tss_path, "r") as f:
-            lines = [line.strip() for line in f if line.strip()]
+            lines: list[str] = []
+            for line in f:
+                stripped = line.strip()
+                if stripped:
+                    lines.append(stripped)
+                    if len(lines) == 2:
+                        break
             if not lines:
                 return None
 
@@ -108,7 +120,7 @@ def parse_number(val: str) -> float | int | None:
             return None
 
 
-def parse_samtools_stats(stats_path: str) -> dict[str, Any]:
+def parse_samtools_stats(stats_path: Path) -> dict[str, Any]:
     """Parses samtools stats using a robust, colon-agnostic mapping approach."""
     metrics: dict[str, Any] = {
         "total_reads": None,
@@ -163,9 +175,9 @@ def main() -> None:
     args = parser.parse_args()
 
     # 1. Parse Data
-    frip = parse_frip(args.frip_file)
-    tss = parse_tss(args.tss_file)
-    stats = parse_samtools_stats(args.stats_file)
+    frip = parse_frip(Path(args.frip_file))
+    tss = parse_tss(Path(args.tss_file))
+    stats = parse_samtools_stats(Path(args.stats_file))
 
     # Check for parsing failures and handle them gracefully by flagging as failed rather than halting the pipeline
     parse_failed = False
