@@ -65,49 +65,6 @@ def parse_frip(frip_path: Path) -> float | None:
     return None
 
 
-def parse_tss(tss_path: Path) -> float | None:
-    """Parses TSS Enrichment value from the R script output (headered or single-line TSV)."""
-    try:
-        with open(tss_path, "r") as f:
-            lines: list[str] = []
-            for line in f:
-                stripped = line.strip()
-                if stripped:
-                    lines.append(stripped)
-                    if len(lines) == 2:
-                        break
-            if not lines:
-                return None
-
-            if len(lines) >= 2 and any(
-                h in lines[0].lower() for h in ("sample", "tss")
-            ):
-                parts = lines[1].split("\t")
-            else:
-                parts = lines[0].split("\t")
-
-            if len(parts) == 1:
-                return float(parts[0])
-            elif len(parts) >= 2:
-                return float(parts[1])
-    except FileNotFoundError:
-        print(
-            f"{Colors.FAIL}TSS Enrichment file not found: {tss_path}{Colors.ENDC}",
-            file=sys.stderr,
-        )
-    except (ValueError, IndexError) as e:
-        print(
-            f"{Colors.FAIL}Error parsing TSS Enrichment format in {tss_path}: {e}{Colors.ENDC}",
-            file=sys.stderr,
-        )
-    except Exception as e:
-        print(
-            f"{Colors.FAIL}Unexpected error parsing TSS Enrichment: {e}{Colors.ENDC}",
-            file=sys.stderr,
-        )
-    return None
-
-
 def parse_number(val: str) -> float | int | None:
     """Parses value from scientific notation or standard formatting robustly."""
     val = val.strip().replace("%", "")
@@ -162,10 +119,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="CUT&RUN QC Gating System")
     parser.add_argument("--sample", required=True)
     parser.add_argument("--frip-file", required=True)
-    parser.add_argument("--tss-file", required=True)
     parser.add_argument("--stats-file", required=True)
     parser.add_argument("--min-frip", type=float, required=True)
-    parser.add_argument("--min-tss", type=float, required=True)
     parser.add_argument("--min-mapping-rate", type=float, required=True)
     parser.add_argument("--max-duplicate-rate", type=float, required=True)
     parser.add_argument("--log", required=True)
@@ -176,7 +131,6 @@ def main() -> None:
 
     # 1. Parse Data
     frip = parse_frip(Path(args.frip_file))
-    tss = parse_tss(Path(args.tss_file))
     stats = parse_samtools_stats(Path(args.stats_file))
 
     # Check for parsing failures and handle them gracefully by flagging as failed rather than halting the pipeline
@@ -184,9 +138,7 @@ def main() -> None:
     if frip is None:
         frip = 0.0
         parse_failed = True
-    if tss is None:
-        tss = 0.0
-        parse_failed = True
+
     for k in ("total_reads", "mapped_properly", "duplicates"):
         if stats.get(k) is None:
             stats[k] = 0
@@ -211,7 +163,6 @@ def main() -> None:
         "sample": args.sample,
         "metrics": {
             "frip": {"val": frip, "target": args.min_frip, "status": "PASS"},
-            "tss": {"val": tss, "target": args.min_tss, "status": "PASS"},
             "mapping": {
                 "val": mapping_rate,
                 "target": args.min_mapping_rate,
@@ -246,7 +197,6 @@ def main() -> None:
         "-------------------------------",
     ]
     report.append(check("frip", frip, args.min_frip))
-    report.append(check("tss", tss, args.min_tss))
     report.append(check("mapping", mapping_rate, args.min_mapping_rate))
     report.append(check("duplicates", dup_rate, args.max_duplicate_rate, "<="))
     report.append("-------------------------------")
