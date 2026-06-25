@@ -2,9 +2,15 @@
 import gzip
 import subprocess
 from pathlib import Path
-import matplotlib
+from typing import Any
+
+import matplotlib  # type: ignore
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore
+
+# Satisfy mypy for the dynamically injected snakemake object
+snakemake: Any
+
 
 # Retrieve variables from snakemake object
 filtered_peaks = Path(snakemake.input.filtered_peaks)
