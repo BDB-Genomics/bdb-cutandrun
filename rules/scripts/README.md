@@ -97,9 +97,10 @@ Evaluates sample quality against strict, user-defined thresholds (like FRiP or T
 
 ### Critical Features
 - **Hard Gating & MultiQC Integration:** Failing samples immediately halt. Output telemetry is written directly to a JSON file for dashboard integration.
-- **Strictly Typed & Linted:** Uses `mypy` strict type annotations and modern formatting for highly robust execution.
+- **Early-Exit OOM Protection:** Streams file iterators and breaks early to guarantee zero Out-Of-Memory crashes, even if a user accidentally passes a massive `.bam` file.
+- **Cross-Platform & Typed:** Uses `pathlib.Path` objects and `mypy` strict typing to eliminate OS-level path bugs.
   ```python
-  def parse_frip(frip_path: str) -> float | None:
+  def parse_frip(frip_path: Path) -> float | None:
       ...
   ```
 
