@@ -67,6 +67,8 @@ if is_empty:
     except Exception as e:
         with open(log_plot, "w") as f:
             f.write(f"Error generating dummy plot: {str(e)}\n")
+        # Prevent MissingOutputException crash
+        open(plot, "a").close()
 else:
     # Run computeMatrix
     cmd_matrix = [
