@@ -59,6 +59,9 @@ include: "rules/peak_annotation.smk"
 include: "rules/motif_analysis.smk"
 include: "rules/correlation_analysis.smk"
 include: "rules/multiqc.smk"
+include: "rules/consensus_peaks.smk"
+include: "rules/count_peaks.smk"
+include: "rules/differential_binding.smk"
 
 
 
@@ -139,6 +142,14 @@ CORRELATION_TARGETS = [
 ]
 MULTIQC_TARGETS = ["results/multiqc"]
 
+DIFFERENTIAL_TARGETS = [
+    "results/differential_binding/plots/volcano_plot.pdf",
+    "results/differential_binding/plots/ma_plot.pdf",
+    "results/differential_binding/plots/heatmap_plot.pdf",
+    "results/differential_binding/plots/pca_plot.pdf",
+    "results/differential_binding/differential_binding_results.tsv"
+]
+
 rule all:
     input:
         (
@@ -155,4 +166,5 @@ rule all:
             + CORRELATION_TARGETS
             + QC_TARGETS
             + MULTIQC_TARGETS
+            + DIFFERENTIAL_TARGETS
         )

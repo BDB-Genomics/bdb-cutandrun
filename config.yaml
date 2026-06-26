@@ -361,3 +361,38 @@ correlation_analysis:
   resources:
     mem_mb: 8000
     time: "02:00:00"
+
+# ------------------------ Differential Binding -----------------------
+consensus_peaks:
+  output:
+    consensus: "results/consensus_peaks"
+    counts: "results/consensus_peaks"
+  params:
+    min_samples: 2
+    merge_distance: 50
+  threads: 2
+  resources:
+    mem_mb: 8000
+    time: "02:00:00"
+
+count_peaks:
+  input:
+    fragments: "results/fragments"
+  output:
+    counts: "results/peak_counts"
+  threads: 4
+  resources:
+    mem_mb: 8000
+    time: "02:00:00"
+
+differential_binding:
+  output:
+    results: "results/differential_binding"
+    plots: "results/differential_binding/plots"
+  params:
+    fdr_threshold: 0.05
+    log2fc_threshold: 1.0
+  threads: 2
+  resources:
+    mem_mb: 8000
+    time: "02:00:00"
