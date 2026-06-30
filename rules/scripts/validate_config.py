@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 
 SAMPLE_COLUMNS = ("sample", "fastq_r1", "fastq_r2", "replicate", "condition")
@@ -35,7 +35,7 @@ def fail(errors: list[str]) -> None:
     print(f"\n{Colors.BOLD}{Colors.RED}┏━ CONFIGURATION VALIDATION FAILED ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓{Colors.ENDC}")
     
     # Categorize errors
-    categories = {
+    categories: dict[str, list[str]] = {
         "Reference Files": [],
         "Sample Sheet": [],
         "Schema/Keys": [],
