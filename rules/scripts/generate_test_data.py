@@ -10,9 +10,11 @@ import gzip
 import os
 import pathlib
 import random
+import shutil
 import subprocess
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import Any, IO
 
 # Genome layout
 GENOME = {
@@ -28,7 +30,6 @@ ECOLI_GENOME = {
 # Annotation parameters
 GENES_CHR1 = 50
 GENES_CHR2 = 30
-GENE_LENGTH = 3000
 GENE_LENGTH = 3000
 GENE_START_OFFSET = 10_000
 
@@ -53,7 +54,7 @@ MAX_FRAGMENT_LEN = 400
 class ReferenceData:
     genome_seqs: dict[str, str]
     ecoli_seqs: dict[str, str]
-    genes: list[dict]
+    genes: list[dict[str, Any]]
 
 
 def reverse_complement(seq: str) -> str:
@@ -91,7 +92,7 @@ def generate_chrom_sizes(filepath: str) -> None:
             fh.write(f"{chrom}\t{size}\n")
 
 
-def _make_genes(chrom: str, n_genes: int, chrom_size: int) -> list[dict]:
+def _make_genes(chrom: str, n_genes: int, chrom_size: int) -> list[dict[str, Any]]:
     """Calculate synthetic gene coordinates distributed across a chromosome."""
     genes = []
     # Dynamically calculate spacing so genes perfectly fit the chromosome
@@ -116,7 +117,7 @@ def _make_genes(chrom: str, n_genes: int, chrom_size: int) -> list[dict]:
     return genes
 
 
-def generate_annotation(filepath: str) -> list[dict]:
+def generate_annotation(filepath: str) -> list[dict[str, Any]]:
     all_genes = []
     all_genes += _make_genes("chr1", GENES_CHR1, GENOME["chr1"])
     all_genes += _make_genes("chr2", GENES_CHR2, GENOME["chr2"])
@@ -145,14 +146,14 @@ def generate_annotation(filepath: str) -> list[dict]:
     return all_genes
 
 
-def _tss_position(gene: dict) -> int:
+def _tss_position(gene: dict[str, Any]) -> int:
     """Returns the Transcription Start Site coordinate based on strand."""
-    return gene["start"] if gene["strand"] == "+" else gene["end"]
+    return int(gene["start"] if gene["strand"] == "+" else gene["end"])
 
 
 def _write_fragment(
-    f1,
-    f2,
+    f1: IO[str],
+    f2: IO[str],
     seqs: dict[str, str],
     quals: str,
     read_idx: int,
@@ -233,9 +234,12 @@ def generate_blacklist(filepath: str) -> None:
 
 def generate_bt2_index(index_dir: str, prefix: str, fasta: str) -> None:
     os.makedirs(index_dir, exist_ok=True)
+    bowtie_path = shutil.which("bowtie2-build")
+    if not bowtie_path:
+        raise FileNotFoundError("bowtie2-build executable not found on system PATH")
     try:
         subprocess.run(
-            ["bowtie2-build", fasta, os.path.join(index_dir, prefix)],
+            [bowtie_path, fasta, os.path.join(index_dir, prefix)],
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
