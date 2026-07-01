@@ -18,18 +18,30 @@ Ideal for machines with ≤4GB RAM where even --jobs 2 causes OOM.
 
 import argparse
 import csv
+import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 import yaml  # type: ignore[import-untyped]
 
+SAMPLE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+
 
 def get_samples(sample_sheet: Path) -> list[str]:
     """Read sample names from the TSV sample sheet."""
     with sample_sheet.open(newline="") as f:
         reader = csv.DictReader(f, delimiter="\t")
-        return [row["sample"] for row in reader if row.get("sample")]
+        samples = []
+        for row in reader:
+            s = row.get("sample", "").strip()
+            if not s:
+                continue
+            if not SAMPLE_NAME_PATTERN.match(s):
+                print(f"ERROR: Invalid sample name '{s}' in sample sheet. Only alphanumeric characters, dashes, and underscores are allowed.", file=sys.stderr)
+                sys.exit(1)
+            samples.append(s)
+        return samples
 
 
 def run_batch(
