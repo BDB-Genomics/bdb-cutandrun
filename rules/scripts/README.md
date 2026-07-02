@@ -80,6 +80,9 @@ Every analytic script implements defensive error handling to prevent a single ba
 ## 📊 Script Flowcharts
 
 ### 1. `validate_config.py` (Startup Validator)
+<details>
+<summary>▶ Click to Expand Flowchart</summary>
+
 ```mermaid
 graph TD
     A[config.yaml] --> B(Load & Parse YAML)
@@ -94,7 +97,12 @@ graph TD
     H -- Yes --> I[Exit 0 / Allow Execution]
 ```
 
+</details>
+
 ### 2. `parse_qc_metrics.py` (QC Gate)
+<details>
+<summary>▶ Click to Expand Flowchart</summary>
+
 ```mermaid
 graph TD
     A[BAM Stats, FRiP, TSS Enrichment] --> B(Load metrics for sample)
@@ -112,7 +120,12 @@ graph TD
     J -- No --> L[Exit 0]
 ```
 
+</details>
+
 ### 3. `run_batched.py` (Low-Resource Batch Orchestrator)
+<details>
+<summary>▶ Click to Expand Flowchart</summary>
+
 ```mermaid
 graph TD
     A[samples.tsv] --> B(Validate sample names regex)
@@ -125,7 +138,12 @@ graph TD
     H --> I[Run final MultiQC on complete cohort]
 ```
 
+</details>
+
 ### 4. `run_heatmap.py` (Heatmap Visualizer)
+<details>
+<summary>▶ Click to Expand Flowchart</summary>
+
 ```mermaid
 graph TD
     A[BigWig + Filtered Peaks] --> B{Is peak file empty?}
@@ -134,7 +152,12 @@ graph TD
     D --> E(Run deepTools plotHeatmap)
 ```
 
+</details>
+
 ### 5. `aggregate_logs.py` (Telemetry Aggregater)
+<details>
+<summary>▶ Click to Expand Flowchart</summary>
+
 ```mermaid
 graph TD
     A[benchmarks/ + logs/] --> B{Pipeline failed?}
@@ -147,7 +170,12 @@ graph TD
     G --> H[pipeline_execution_summary.json]
 ```
 
+</details>
+
 ### 6. `generate_test_data.py` (CI/CD Synthetic Generator)
+<details>
+<summary>▶ Click to Expand Flowchart</summary>
+
 ```mermaid
 graph TD
     A[Start] --> B(Build small synthetic target & E.coli genomes)
@@ -158,7 +186,12 @@ graph TD
     F --> G(Simulate paired-end FASTQs via random sampling)
 ```
 
+</details>
+
 ### 7. `tss_enrichment.R` (TSS Coverage Engine)
+<details>
+<summary>▶ Click to Expand Flowchart</summary>
+
 ```mermaid
 graph TD
     A[Filtered BAM + GTF] --> B{Any alignment overlaps with TSS?}
@@ -168,7 +201,12 @@ graph TD
     E --> F[Save score TSV & TSS profile plot PDF]
 ```
 
+</details>
+
 ### 8. `diff_binding.R` (DESeq2 Contrast Engine)
+<details>
+<summary>▶ Click to Expand Flowchart</summary>
+
 ```mermaid
 graph TD
     A[Peak Count Matrix + Metadata] --> B{Peak count >= 10?}
@@ -178,7 +216,12 @@ graph TD
     E --> F[Save differential TSV & diagnostic PDFs]
 ```
 
+</details>
+
 ### 9. `peak_annotation.R` (ChIPseeker Annotator)
+<details>
+<summary>▶ Click to Expand Flowchart</summary>
+
 ```mermaid
 graph TD
     A[Filtered Peaks + GTF] --> B{Peak file empty?}
@@ -187,3 +230,5 @@ graph TD
     D --> E(Annotate peak distances to TSS using ChIPseeker)
     E --> F[Save annotation TSV & feature statistics]
 ```
+
+</details>
