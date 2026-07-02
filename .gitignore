@@ -1,7 +1,6 @@
 # --- Agent/IDE tool files ---
 .claude/
 .gitnexus/
-AGENTS.md
 CLAUDE.md
 
 # ========================
