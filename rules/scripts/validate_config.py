@@ -202,6 +202,7 @@ def validate_scalar_config_values(config: dict[str, Any], errors: list[str]) -> 
     positive_float_suffixes = (
         "M",
         "background",
+        "min_tss",
     )
     non_empty_string_suffixes = (
         "time",

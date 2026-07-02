@@ -54,6 +54,7 @@ include: "rules/seacr_peak_calling.smk"
 include: "rules/blacklist_region_filter.smk"
 include: "rules/preseq.smk"
 include: "rules/qualimap_bamqc.smk"
+include: "rules/tss_enrichment.smk"
 include: "rules/heatmap.smk"
 include: "rules/peak_annotation.smk"
 include: "rules/motif_analysis.smk"
@@ -120,6 +121,8 @@ PEAK_CALLING_TARGETS = (
 QC_TARGETS = (
     expand("results/preseq/{sample}.ccurve.txt", sample=SAMPLES)
     + expand("results/qualimap/{sample}_qualimap_report", sample=SAMPLES)
+    + expand("results/tss_enrichment/{sample}_tss_enrichment.txt", sample=SAMPLES)
+    + expand("results/tss_enrichment/{sample}_tss_enrichment.pdf", sample=SAMPLES)
 )
 
 VISUALIZATION_TARGETS = (

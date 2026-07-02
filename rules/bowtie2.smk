@@ -14,11 +14,12 @@ rule bowtie2:
         mem_mb = config['bowtie2']['resources']['mem_mb'],
         time = config['bowtie2']['resources']['time'] 
 
-    benchmark: "benchmark/bowtie2/{sample}.txt"
+    benchmark: "benchmarks/bowtie2/{sample}.txt"
     log: "logs/bowtie2/{sample}.log"
     conda: "envs/bowtie2.yaml"
     container: "https://depot.galaxyproject.org/singularity/bowtie2:2.3.4.1--py27h2d50403_1"
     threads: config['bowtie2']['threads']
+    message: "[Bowtie2 Alignment] Aligning sample {wildcards.sample} using {threads} threads | Index: {params.index}"
 
     shell:
         r"""

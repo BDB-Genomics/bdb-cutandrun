@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any
 import yaml  # type: ignore[import-untyped]
 
-SAMPLE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+SAMPLE_NAME_PATTERN = re.compile(r"^(?!.*\.\.)[A-Za-z0-9._-]+$")
 
 
 def get_samples(sample_sheet: Path) -> list[str]:
@@ -44,6 +44,26 @@ def get_samples(sample_sheet: Path) -> list[str]:
         return samples
 
 
+def get_config_path(config: dict[str, Any], path_keys: tuple[str, ...]) -> str:
+    """Safely get a nested configuration value using get() or exit with an error message."""
+    curr: Any = config
+    for k in path_keys:
+        if isinstance(curr, dict):
+            curr = curr.get(k)
+            if curr is None:
+                print(f"ERROR: Missing required config key: {'.'.join(path_keys)}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            print(f"ERROR: Missing required config key: {'.'.join(path_keys)}", file=sys.stderr)
+            sys.exit(1)
+    
+    val_str = str(curr)
+    if re.match(r"^(True|False|None)$", val_str, re.IGNORECASE):
+        print(f"ERROR: Config path key '{'.'.join(path_keys)}' has invalid value: '{val_str}' (cannot be a boolean or None).", file=sys.stderr)
+        sys.exit(1)
+    return val_str
+
+
 def run_batch(
     samples: list[str],
     batch_id: int,
@@ -57,14 +77,14 @@ def run_batch(
     target_files = []
     for s in samples:
         target_files.extend([
-            f"{config['fastp']['output']['dir']}/{s}_R1_trimmed.fastq.gz",
-            f"{config['bowtie2']['output']}/{s}.bam",
-            f"{config['samtools_sort']['output']['sorted_bam']}/{s}.sorted.bam",
-            f"{config['samtools_markdup']['output']['markdup_bam']}/{s}_noMT.sorted.dedup.bam",
-            f"{config['bam_to_fragments']['output']['fragments']}/{s}_fragments.bed",
-            f"{config['seacr']['output']['peaks']}/{s}.peaks.stringent.bed",
-            f"{config['blacklist_region_filter']['output']['filtered_peaks']}/{s}_filtered_peaks.bed",
-            f"{config['bigwig']['output']['bigwig']}/{s}.bw",
+            f"{get_config_path(config, ('fastp', 'output', 'dir'))}/{s}_R1_trimmed.fastq.gz",
+            f"{get_config_path(config, ('bowtie2', 'output'))}/{s}.bam",
+            f"{get_config_path(config, ('samtools_sort', 'output', 'sorted_bam'))}/{s}.sorted.bam",
+            f"{get_config_path(config, ('samtools_markdup', 'output', 'markdup_bam'))}/{s}_noMT.sorted.dedup.bam",
+            f"{get_config_path(config, ('bam_to_fragments', 'output', 'fragments'))}/{s}_fragments.bed",
+            f"{get_config_path(config, ('seacr', 'output', 'peaks'))}/{s}.peaks.stringent.bed",
+            f"{get_config_path(config, ('blacklist_region_filter', 'output', 'filtered_peaks'))}/{s}_filtered_peaks.bed",
+            f"{get_config_path(config, ('bigwig', 'output', 'bigwig'))}/{s}.bw",
         ])
 
     cmd = [

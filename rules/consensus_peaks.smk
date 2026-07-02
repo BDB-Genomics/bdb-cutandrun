@@ -24,6 +24,7 @@ rule consensus_peaks:
 
     shell:
         """
+        set -euo pipefail
         cat {input.peaks} | sort -k1,1 -k2,2n > {output.consensus}.merged.tmp
 
         bedtools merge -i {output.consensus}.merged.tmp \

@@ -1,7 +1,7 @@
 rule differential_binding:
     input:
         counts=expand("{path}/{sample}_peak_counts.tsv", path=config['count_peaks']['output']['counts'], sample=SAMPLES),
-        sample_sheet=config['global']['sample_sheet']
+        sample_sheet=config['global']['samples']
 
     output:
         results=f"{config['differential_binding']['output']['results']}/differential_binding_results.tsv",

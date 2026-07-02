@@ -16,7 +16,7 @@ rule multiqc:
     resources:
         mem_mb=config['multiqc']['resources']['mem_mb'], 
         time=config['multiqc']['resources']['time']
-            
+    benchmark: "benchmarks/multiqc/multiqc.txt"
     log: "logs/multiqc/multiqc.err"
     container: "https://depot.galaxyproject.org/singularity/multiqc:1.26--pyhdfd78af_0"
     conda: "envs/multiqc.yaml"

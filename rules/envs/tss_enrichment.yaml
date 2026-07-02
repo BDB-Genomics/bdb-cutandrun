@@ -1,0 +1,12 @@
+name: tss_enrichment
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconductor-atacseqqc
+  - bioconductor-genomicalignments
+  - bioconductor-rsamtools
+  - bioconductor-genomicfeatures
+  - bioconductor-txdbmaker
+  - bioconductor-genomeinfodb
+  - bioconductor-chippeakanno

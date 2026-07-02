@@ -173,6 +173,22 @@ picard_collect_insert_size_metrics:
     time: "01:00:00"
 
 # ------------------------ Coverage & Peak Utils -----------------------
+tss_enrichment:
+  input:
+    bam: "results/samtools_view"
+    bam_index: "results/samtools_index_post_filter"
+  output:
+    dir: "results/tss_enrichment"
+  params:
+    annotation: "data/reference/annotation.gtf"
+    upstream: 2000
+    downstream: 2000
+    min_tss: 7.0
+  threads: 4
+  resources:
+    mem_mb: 4000
+    time: "01:00:00"
+
 sorted_bedgraph:
   input:
     bedgraph: "results/bedtools_genomecov"
